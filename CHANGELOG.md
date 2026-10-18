@@ -1,5 +1,19 @@
 # Changelog
 
+## [v1.0.1-streamx.0](https://github.com/streamx-com/k8gb/tree/v1.0.1-streamx.0) (2026-10-18)
+
+<!-- Release notes generated using configuration in .github/release.yml at master -->
+
+## What's Changed
+### Features, fixes, and maintenance
+* fix: allow local delegation withdrawal while peers remain by @michalcukierman in https://github.com/streamx-com/k8gb/pull/1
+* ci: add manual patched image release workflow by @michalcukierman in https://github.com/streamx-com/k8gb/pull/2
+
+## New Contributors
+* @michalcukierman made their first contribution in https://github.com/streamx-com/k8gb/pull/1
+
+**Full Changelog**: https://github.com/streamx-com/k8gb/commits/v1.0.1-streamx.0
+
 ## [v1.0.1](https://github.com/k8gb-io/k8gb/tree/v1.0.1) (2026-10-16)
 
 <!-- Release notes generated using configuration in .github/release.yml at v1.0.1 -->
