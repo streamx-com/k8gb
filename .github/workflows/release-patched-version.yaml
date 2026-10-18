@@ -1,0 +1,80 @@
+name: Release patched version
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag in this repository to build and publish
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set image tag
+        id: image
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}$ ]]
+          echo "name=ghcr.io/${GITHUB_REPOSITORY,,}:$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Check out requested tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+          path: source
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: source/go.mod
+          cache-dependency-path: source/go.sum
+
+      - name: Test source
+        working-directory: source
+        run: go test ./...
+
+      - name: Build binaries
+        working-directory: source
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          source_commit=$(git rev-parse HEAD)
+          for arch in amd64 arm64; do
+            mkdir -p "dist/linux/$arch/bin"
+            CGO_ENABLED=0 GOOS=linux GOARCH="$arch" go build -mod=readonly -trimpath \
+              -ldflags="-s -w -X main.version=$RELEASE_TAG -X main.commit=$source_commit" \
+              -o "dist/linux/$arch/bin/k8gb" ./main.go
+          done
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish images
+        uses: docker/build-push-action@v6
+        with:
+          context: source/dist
+          file: source/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.image.outputs.name }}
