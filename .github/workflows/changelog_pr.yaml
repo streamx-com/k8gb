@@ -10,6 +10,8 @@ permissions:  # added using https://github.com/step-security/secure-workflows
 
 jobs:
   chanagelog-pr:
+    # Upstream publishing requires credentials and permissions unavailable in forks.
+    if: ${{ github.repository == 'k8gb-io/k8gb' }}
     permissions:
       contents: write  # for peter-evans/create-pull-request to create branch
       pull-requests: write  # for peter-evans/create-pull-request to create a PR
